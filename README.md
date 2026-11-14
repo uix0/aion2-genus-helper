@@ -31,7 +31,7 @@ The game has to run in borderless or windowed mode; exclusive fullscreen usually
 - English game client only: stat names are matched against the English names.
 - Tested on real screenshots at 2560x1440 and 1920x1080, and on resized screenshots at 3840x2160, 1600x900 and 1280x720. At 1280x720 values are still read correctly but more lines show "2 of 3".
 - The roll tables come from the game client (version at the top of `data/options.js`) via aion2.gg. After a game patch that changes Genus Insight they need refreshing.
-- Roll prices for 1 and 8 locked lines are estimates; the others were read off the Analyze button in game.
+- The roll price for 8 locked lines is an estimate; the others were read off the Analyze button in game.
 - The class defaults are one player's opinion. Change them in `data/classes.js`.
 - It gives advice. It never touches the game, and you decide whether to roll.
 

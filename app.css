@@ -939,3 +939,25 @@ footer p {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+.why {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--line2);
+  color: var(--mute);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: help;
+  vertical-align: middle;
+  user-select: none;
+}
+.why:hover,
+.why:focus-visible {
+  color: #1a1305;
+  border-color: transparent;
+  background: var(--gold);
+  outline: none;
+}

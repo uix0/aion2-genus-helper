@@ -17,9 +17,9 @@ const ODDS = {
 };
 const GRADES = ["Common", "Rare", "Epic", "Unique", "Heroic"];
 const GENERA = Object.keys(OPTIONS);
-// Soul Crystals for one roll by number of locked lines (9 open slots); kinah is 250 per crystal. 1 and 8 locks are estimates.
+// Soul Crystals for one roll by number of locked lines (9 open slots); kinah is 250 per crystal. 8 locks is an estimate.
 const ROLL_COST = [36, 40, 44, 60, 96, 172, 248, 324, 400],
-  COST_EST = [0, 1, 0, 0, 0, 0, 0, 0, 1];
+  COST_EST = [0, 0, 0, 0, 0, 0, 0, 0, 1];
 const rollCost = (L, n) => Math.max(1, ROLL_COST[Math.min(8, L)] - 4 * (9 - n));
 const CLASSES = window.GENUS_CLASSES;
 const GROUPS = [
@@ -204,6 +204,7 @@ for (const g of GENERA) {
 }
 // never worth taking on that board even when picked: Special slot 4 is for Double Chance or a positional damage boost
 const SKIP = { Special: ["Damage Boost", "Critical Damage Boost"] };
+const HIGH_ANYWAY = 90; // a ruled-out pick that rolled at least this % of its maximum is still shown as "decent, your call"
 // the stats that count as good in a slot: your picks, narrowed to the slot-only ones when the slot has any
 function accepted(slot) {
   const skip = SKIP[S.genus] || [],
@@ -357,7 +358,26 @@ function renderAdvice() {
     let adv = "";
     const unsure = l.stat && l.agree === 1,
       seen = l.readers ? l.readers.map((x) => (x == null ? "?" : x)).join(" / ") : "";
-    if (anyPick && l.stat) {
+    // one of your picks that this slot does not count: either the board rule (Special slot 4) or a slot with its own stats
+    const qv = Math.round(quality(l.stat, l.value) * 100),
+      ruledOut = anyPick && !!l.stat && st === "unwanted" && !!S.want[gkey(l.stat)],
+      boardRule = ruledOut && (SKIP[S.genus] || []).includes(l.stat),
+      // ...but a very high roll of it is still flagged as worth a look, whatever the lock settings say
+      highAnyway = boardRule && qv >= HIGH_ANYWAY && (!g || GI(g) >= GI(S.minGrade));
+    const wanted = [...accs[i]].sort().join(" or ");
+    const why = !ruledOut
+      ? ""
+      : boardRule
+        ? `${l.stat} is one of your picks, but slot ${slot.index} on the ${S.genus} board is where ${wanted || "Double Chance or a front/back attack damage boost"} rolls, which is worth far more, so ${l.stat} is normally a reroll here.` +
+          (highAnyway
+            ? ` This one rolled ${qv}% of its maximum though, which is high enough that keeping it is reasonable. Your call.`
+            : "")
+        : `${l.stat} is one of your picks, but slot ${slot.index} can roll stats found nowhere else on this board (${wanted}), so only those count here.`;
+    const whyIcon = why
+      ? ` <span class="why" tabindex="0" role="button" title="${why}" data-why="${why}">?</span>`
+      : "";
+    if (highAnyway) adv = `<span class="badge b-okay" title="${why}">your call</span>`;
+    else if (anyPick && l.stat) {
       const keep = D.lock[i];
       // clears the bar but is under the top bar (the "before slot 4" %, or slot 4's "nothing else locked" %): worth a lock, not a must
       const decent = keep && quality(l.stat, l.value) * 100 < (i === D.i4 ? S.s4a : S.pre) - 1e-6;
@@ -373,8 +393,7 @@ function renderAdvice() {
       } else adv = `<span class="badge b-roll">reroll</span>`;
     }
     if (unsure) adv = `<span class="badge b-unlock">CHECK VALUE</span>`;
-    const qv = Math.round(quality(l.stat, l.value) * 100),
-      bar = D.floors[i],
+    const bar = D.floors[i],
       fair = qv >= (i === D.i4 ? S.s4c : S.minRoll) - 1e-6;
     const stPill =
       !l.stat || !anyPick
@@ -387,14 +406,18 @@ function renderAdvice() {
               : `<span class="st low">roll too low</span>`
             : st === "lowgrade"
               ? `<span class="st low">grade too low</span>`
-              : `<span class="st">not wanted</span>`;
+              : highAnyway
+                ? `<span class="st mid">decent</span>${whyIcon}`
+                : ruledOut
+                  ? `<span class="st low">not for slot ${slot.index}</span>${whyIcon}`
+                  : `<span class="st">not wanted</span>`;
     const meter =
-      l.stat && good && l.value != null
-        ? `<div class="meter" title="Rolled ${qv}% of the highest possible; this slot locks at ${bar}% right now"><div class="track"><i class="${st === "ok" ? "ok" : fair ? "mid" : "low"}" style="width:${Math.min(100, qv)}%"></i><b style="left:${Math.min(100, bar)}%"></b></div><span>${qv}%</span><small>/ ${bar}%</small></div>`
+      l.stat && (good || highAnyway) && l.value != null
+        ? `<div class="meter" title="Rolled ${qv}% of the highest possible; this slot locks at ${bar}% right now"><div class="track"><i class="${st === "ok" ? "ok" : fair || highAnyway ? "mid" : "low"}" style="width:${Math.min(100, qv)}%"></i><b style="left:${Math.min(100, bar)}%"></b></div><span>${qv}%</span><small>/ ${bar}%</small></div>`
         : anyPick && accs[i].size && (!l.stat || good)
           ? `<span class="small mute">needs ${bar}%</span>`
           : "";
-    h += `<tr class="${anyPick && l.stat && D.lock[i] ? "is-keep" : ""}${anyPick && l.stat && !D.lock[i] && !D.okay[i] && l.locked ? " is-unlock" : ""}"><td><span class="slotn${slot.index === 4 ? " s4" : ""}">${slot.index}</span></td>
+    h += `<tr class="${anyPick && l.stat && D.lock[i] ? "is-keep" : ""}${anyPick && l.stat && !D.lock[i] && !D.okay[i] && !highAnyway && l.locked ? " is-unlock" : ""}"><td><span class="slotn${slot.index === 4 ? " s4" : ""}">${slot.index}</span></td>
      <td><label class="lockbox" title="Locked in game"><input type="checkbox" data-i="${i}" data-f="locked" ${l.locked ? "checked" : ""}><span></span></label></td>
      <td><select class="stat${g ? " g" + g : ""}" data-i="${i}" data-f="stat"><option value="">(not read)</option>${stats.map((s) => `<option${s === l.stat ? " selected" : ""}>${s}</option>`).join("")}${l.stat && !stats.includes(l.stat) ? `<option selected>${l.stat}</option>` : ""}</select></td>
      <td class="n"><input type="number" step="any" class="val${unsure ? " unsure" : ""}" data-i="${i}" data-f="value" value="${l.value ?? ""}">${STAT[gkey(l.stat || "")]?.pct ? "<em>%</em>" : ""}${l.stat && l.agree && l.agree < 3 ? `<span class="rd${unsure ? " bad" : ""}" title="The three readers saw: ${seen}">${unsure ? "?? " + seen : "2 of 3"}</span>` : ""}</td>
@@ -403,6 +426,17 @@ function renderAdvice() {
      <td class="n mute">${anyPick && accs[i].size ? (D.odds[i] * 100).toFixed(1) + "%" : ""}</td><td>${adv}</td></tr>`;
   });
   $("lines").innerHTML = h;
+  // the "?" explains itself on hover; a click or tap shows the same text under the table
+  $("whyNote").hidden = true;
+  $("lines")
+    .querySelectorAll(".why")
+    .forEach(
+      (el) =>
+        (el.onclick = () => {
+          $("whyNote").textContent = el.dataset.why;
+          $("whyNote").hidden = false;
+        }),
+    );
   $("lines")
     .querySelectorAll("[data-f]")
     .forEach(
