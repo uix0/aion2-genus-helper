@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Genus Helper (https://github.com/uix0/aion2-genus-helper). PolyForm Noncommercial License 1.0.0, see LICENSE.md. -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Genus Helper</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0f15'/%3E%3Cpath d='M16 5l9 11-9 11-9-11z' fill='none' stroke='%23e8c26a' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%234fe3f2'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Marcellus&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <div class="top">
+        <div class="brand">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <defs>
+              <linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#f6dc9b" />
+                <stop offset="1" stop-color="#b8862b" />
+              </linearGradient>
+            </defs>
+            <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(255,255,255,.14)" />
+            <path
+              d="M24 6l13 18-13 18L11 24z"
+              fill="rgba(232,194,106,.08)"
+              stroke="url(#lg)"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path d="M11 24h26M24 6v36" stroke="url(#lg)" stroke-width="1" opacity=".45" />
+            <circle cx="24" cy="24" r="4" fill="#4fe3f2" />
+          </svg>
+          <div>
+            <h1>Genus Helper</h1>
+            <p>Reads your Aion 2 Genus Insight panel and tells you what to lock.</p>
+          </div>
+        </div>
+        <div class="pills">
+          <span class="pill" id="liveP"><i></i><span id="liveT">Not sharing</span></span
+          ><span class="pill" id="clientP"></span>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="col">
+          <div id="verdict"></div>
+
+          <div class="card">
+            <header>
+              <h2>Your lines</h2>
+              <span class="sp"></span>
+              <div class="seg" id="genus"></div>
+              <select id="level" title="Insight level"></select>
+            </header>
+            <div class="tw"><table id="lines"></table></div>
+            <p class="help">
+              The bar under <b>Roll</b> is the value as a share of the highest that stat can roll; the white tick is
+              what the slot needs right now. Odds: the chance one roll of that slot lands a line worth locking. Click a
+              lock, stat or value to correct a misread.
+            </p>
+            <details class="more" style="margin-top: 10px">
+              <summary>What counts as good in each slot on this board</summary>
+              <div id="good" class="small"></div>
+            </details>
+          </div>
+
+          <div class="card">
+            <header>
+              <h2>Lock rules</h2>
+              <span class="sp"></span
+              ><select id="minGrade" title="Lowest grade worth locking">
+                <option value="Common">Any grade</option>
+                <option value="Rare">Rare or better</option>
+                <option value="Epic">Epic or better</option>
+                <option value="Unique">Unique or better</option>
+                <option value="Heroic">Heroic only</option>
+              </select>
+            </header>
+            <div class="rules">
+              <div>
+                <div class="barsT">Slot 4 locks at (% of max)</div>
+                <div class="bars">
+                  <label class="f"
+                    >Nothing else locked<input id="s4a" type="number" min="0" max="100" step="5"
+                  /></label>
+                  <label class="f">One other lock<input id="s4b" type="number" min="0" max="100" step="5" /></label>
+                  <label class="f">Two or more<input id="s4c" type="number" min="0" max="100" step="5" /></label>
+                </div>
+              </div>
+              <div>
+                <div class="barsT">Other slots lock at (% of max)</div>
+                <div class="bars">
+                  <label class="f"
+                    >Before slot 4 is locked<input id="pre" type="number" min="0" max="100" step="5"
+                  /></label>
+                  <label class="f"
+                    >Once slot 4 is locked<input id="minRoll" type="number" min="0" max="100" step="5"
+                  /></label>
+                  <label class="f"
+                    >Leave my locks alone within<input id="near" type="number" min="0" max="100" step="5"
+                  /></label>
+                </div>
+              </div>
+            </div>
+            <details class="more" style="margin-top: 12px">
+              <summary>How these work</summary>
+              <p class="help">
+                Until slot 4 has a line worth locking, only very high rolls elsewhere earn a lock, because every lock
+                makes each further try at slot 4 cost more. Each such lock lowers what slot 4 has to roll. Once slot 4
+                is locked, the other slots drop to their lower bar. A line you already have locked that is within the
+                last number of points of its bar is left alone and shown as "okay". "Lock" means a line clears the top
+                bar; "decent lock" means it clears only the current one, so it is your call.
+              </p>
+            </details>
+          </div>
+
+          <div class="card">
+            <header>
+              <h2>Roll tracker</h2>
+              <span class="sp"></span>
+              <button class="ghost" id="rollMinus" title="Take the last counted roll off this board">&minus; 1</button
+              ><button class="ghost" id="rollPlus" title="Add a roll at the current number of locks">+ 1</button
+              ><button class="ghost" id="rollReset">Reset board</button
+              ><button class="ghost" id="rollResetAll">Reset all</button>
+            </header>
+            <div id="rollInfo"></div>
+            <details class="more" style="margin-top: 12px">
+              <summary>Per board and how cost is worked out</summary>
+              <div class="tw" style="margin-top: 8px"><table id="rollTab"></table></div>
+              <p class="help">
+                Each counted roll is priced by how many lines were locked at the time: 36, 40, 44, 60, 96, 172, 248,
+                324, 400 Soul Crystals for 0 to 8 locks, and 250 Kina per crystal. The figures for 1 and 8 locks are
+                estimates, so totals that include them are marked with ~. Rolls are only counted while sharing the
+                screen.
+              </p>
+            </details>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card" id="capCard">
+            <header>
+              <span class="step">1</span>
+              <h2>Read the game</h2>
+              <span class="sp"></span
+              ><button class="ghost" id="pvBig" title="Make the preview larger for drawing the box">Enlarge</button>
+            </header>
+            <div class="row">
+              <button class="pri" id="share">Share game screen</button>
+              <button id="scanBtn" disabled>Scan now</button>
+              <button id="stopShare" style="display: none">Stop</button>
+              <button id="pick" type="button">Open screenshot</button
+              ><input type="file" id="file" accept="image/*" hidden />
+            </div>
+            <p class="help">
+              You can share your screen and get live results. The list of Genus lines is found automatically, so most
+              people won't have to do anything; if the box ends up in the wrong place, drag a new one around the list,
+              making sure it includes the lock icons and values. Make sure the game is in borderless or windowed mode.
+            </p>
+            <div class="row" style="margin-top: 10px">
+              <label class="c"><input type="checkbox" id="auto" checked />Re-scan when the panel changes</label
+              ><span class="sp"></span
+              ><button
+                class="ghost"
+                id="findBtn"
+                title="Look over the whole picture for the Genus list and put the box on it"
+              >
+                Find the list
+              </button>
+            </div>
+            <div id="pvBox">
+              <canvas id="pv"></canvas>
+              <div class="small mute" style="margin-top: 6px">
+                Drag on the picture to move the box. You can also paste a screenshot with Ctrl+V.
+                <a href="#" id="whole">Use the whole picture</a>
+              </div>
+            </div>
+            <div id="status"></div>
+          </div>
+
+          <details class="card" id="statsBox" open>
+            <summary>
+              <span class="step">2</span>
+              <h2>Class and stats</h2>
+            </summary>
+            <div class="seg" id="cls"></div>
+            <p class="help" id="clsNote">
+              Defaults have been picked by the developer. If you disagree, feel free to select whatever you want to aim
+              for!
+            </p>
+            <div id="want"></div>
+            <div class="row" style="margin-top: 14px"><button id="clearPri">Clear all</button></div>
+          </details>
+        </div>
+      </div>
+
+      <footer>
+        <p>
+          A line is worth locking when its stat is one you picked for that slot and it rolled at least the slot's
+          current bar. Every value is read three independent ways, and no advice is given for a line unless at least two
+          agree. Roll tables come from the game client via aion2.gg. Not affiliated with NCSOFT.
+        </p>
+        <p>Runs entirely in your browser. Nothing is uploaded.</p>
+      </footer>
+    </div>
+
+    <script src="data/options.js"></script>
+    <script src="data/classes.js"></script>
+    <script src="data/glyphs.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+# raw pages saved from aion2.gg (data/options.js was made from them)
+data/html/
+# leftover from an earlier combat-power version, no longer used
+cp_weights.json
+# local-only reader tests (real screenshots) and the Node tooling that runs them; the site itself needs neither
+tests/
+package.json
+package-lock.json
+node_modules/
+.DS_Store
+Thumbs.db
