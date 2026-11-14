@@ -368,9 +368,9 @@ function renderAdvice() {
     const why = !ruledOut
       ? ""
       : boardRule
-        ? `${l.stat} is one of your picks, but slot ${slot.index} on the ${S.genus} board is where ${wanted || "Double Chance or a front/back attack damage boost"} rolls, which is worth far more, so ${l.stat} is normally a reroll here.` +
+        ? `${l.stat} is one of your picks, but slot ${slot.index} on the ${S.genus} board is where ${wanted || "Double Chance or a front/back attack damage boost"} rolls, which is worth far more, so ${l.stat} is normally a reroll here, unless it's a very high roll.` +
           (highAnyway
-            ? ` This one rolled ${qv}% of its maximum though, which is high enough that keeping it is reasonable. Your call.`
+            ? ` This one rolled ${qv}% of its maximum, which is high enough that keeping it is reasonable. Your call.`
             : "")
         : `${l.stat} is one of your picks, but slot ${slot.index} can roll stats found nowhere else on this board (${wanted}), so only those count here.`;
     const whyIcon = why
