@@ -8,6 +8,12 @@ It is a single web page. Nothing is installed and nothing is uploaded: the scree
 
 ![Genus Helper](docs/screenshot.png)
 
+## See it in use
+
+[![Watch Genus Helper in use on YouTube](https://img.youtube.com/vi/Tc4mtOsowS4/maxresdefault.jpg)](https://www.youtube.com/watch?v=Tc4mtOsowS4)
+
+Watch on YouTube: https://www.youtube.com/watch?v=Tc4mtOsowS4
+
 ## Using it
 
 1. Open https://uix0.github.io/aion2-genus-helper/ in Chrome or Edge (or download the repository and open `index.html`).
