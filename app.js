@@ -615,6 +615,7 @@ let busy = false,
   pending = false,
   worker = null,
   prevScan = null,
+  rollBase = null, // the read from just before the last counted roll
   lastRollAt = 0;
 const status = (t, cls) => {
   const e = $("status");
@@ -803,6 +804,7 @@ async function startShare() {
   await cap.video.play();
   cap.src = "live";
   cap.lastSig = cap.scannedSig = null;
+  prevScan = rollBase = null; // a new share starts from its own first read, not from what was on screen last time
   cap.stream.getVideoTracks()[0].onended = stopShare;
   document.body.classList.add("sharing");
   $("liveT").textContent = "Sharing";
@@ -1637,23 +1639,43 @@ function applyScan(r, live) {
   const miss = lines.filter((l) => !l.stat || l.value == null).length;
   // count a roll: same board, same locks, every locked line untouched, and at least one unlocked line different.
   // Reads within 1.5 s of a counted roll belong to the same roll (the game is still showing the new lines).
+  // A value only counts as changed when the readers agreed on it both times, so a doubtful read that flips is not a roll.
+  // A read that lands back exactly on the lines from before the last counted roll means that roll was a misread
+  // (a fade, a tooltip over the list): it is taken off again.
   let rolled = "";
   if (live && !miss && prevScan && prevScan.genus === genus && prevScan.lines.length === lines.length) {
     const same = (a, b) => a.stat === b.stat && a.value === b.value,
+      sure = (a) => (a.agree ?? 3) >= 2,
+      changed = (a, b) => a.stat !== b.stat || (a.value !== b.value && sure(a) && sure(b)),
       P = prevScan.lines;
     if (
+      rollBase &&
+      rollBase.genus === genus &&
+      rollBase.lines.length === lines.length &&
+      rollBase.lines.every((p, i) => p.locked === lines[i].locked && same(p, lines[i]))
+    ) {
+      undoRoll(genus);
+      rollBase = null;
+      rolled = " The last counted roll was a misread, so it has been taken off.";
+      render();
+    } else if (
       P.every((p, i) => p.locked === lines[i].locked && (!p.locked || same(p, lines[i]))) &&
-      P.some((p, i) => !p.locked && !same(p, lines[i])) &&
+      P.some((p, i) => !p.locked && changed(p, lines[i])) &&
       performance.now() - lastRollAt > 1500
     ) {
       const L = P.filter((p) => p.locked).length,
         rec = addRoll(genus, L, P.length);
       lastRollAt = performance.now();
+      rollBase = prevScan;
       rolled = ` Roll ${rec.n} counted (${L} locked, ${rollCost(L, P.length)} Soul Crystals).`;
       render();
     }
   }
-  if (!miss) prevScan = { genus, lines: lines.map((l) => ({ stat: l.stat, value: l.value, locked: l.locked })) };
+  if (!miss)
+    prevScan = {
+      genus,
+      lines: lines.map((l) => ({ stat: l.stat, value: l.value, locked: l.locked, agree: l.agree })),
+    };
   status(
     `Read ${lines.length - miss} of ${lines.length} lines on the ${genus} board${r.genus ? "" : " (board not seen in the picture, so the selected one is used)"}.${miss ? " Fill in the missing ones by hand." : ""}${rolled}`,
     miss ? "warn" : "mute",
@@ -1808,6 +1830,7 @@ $("auto").onchange = (e) => {
 };
 $("rollMinus").onclick = () => {
   undoRoll(S.genus);
+  rollBase = null;
   render();
 };
 $("rollPlus").onclick = () => {
